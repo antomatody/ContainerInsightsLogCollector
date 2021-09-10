@@ -9,7 +9,7 @@ list_oms_pods()
     kubectl get pods -n kube-system | grep omsagent
 }
 
-log-collector()
+log_collector()
 {
     echo "start log collecting"
     mkdir $path
