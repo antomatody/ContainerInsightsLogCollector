@@ -15,10 +15,35 @@ log_collector()
     mkdir $path
     kubectl get deployment omsagent-rs -n kube-system -o yaml > $path/deployment.txt 2>&1
     kubectl get configmaps container-azm-ms-agentconfig -o yaml -n kube-system > $path/configmap.txt 2>&1
-    for RSOMSPOD in $(kubectl get pods -n kube-system | grep omsagent-rs | awk '{print $1}' )
+    RSOMSPOD=$(kubectl get pods -n kube-system | grep omsagent-rs | awk '{print $1}' )
+    
+    #rs-pod collection
+    mkdir $path/$RSOMSPOD
+    kubectl logs $RSOMSPOD -n kube-system > $path/$RSOMSPOD-podlog.log
+    kubectl describe pod $RSOMSPOD -n kube-system > $path/$RSOMSPOD-describe.log
+
+    kubectl cp -n kube-system $RSOMSPOD:/var/opt/microsoft/linuxmonagent/log $path/$RSOMSPOD 1>/dev/null
+    kubectl cp -n kube-system $RSOMSPOD:/var/opt/microsoft/docker-cimprov/log $path/$RSOMSPOD 1>/dev/null
+
+
+    for OMSPOD in $(kubectl get pods -n kube-system | grep omsagent | awk '{print $1}' )
     do
-        kubectl delete pod $RSOMSPOD -n kube-system
+        if [ $OMSPOD == $RSOMSPOD ] ; then continue
+        else 
+            mkdir $path/$OMSPOD
+            kubectl logs $OMSPOD -n kube-system > $path/$OMSPOD-podlog.log
+            kubectl describe pod $OMSPOD -n kube-system > $path/$OMSPOD-describe.log
+
+            kubectl cp -n kube-system $OMSPOD:/var/opt/microsoft/linuxmonagent/log $path/$OMSPOD 1>/dev/null
+            kubectl cp -n kube-system $OMSPOD:/var/opt/microsoft/docker-cimprov/log $path/$OMSPOD 1>/dev/null
+            break
+        fi
     done
+
+    tar -zcvf $path.tar.gz $path/ 1>/dev/null
+    #rm -rf $path/
+
+    echo "collection complete at $path.tar.gz"
 }
 
 delete_oms_pod()
@@ -65,9 +90,11 @@ if [ "$ifdeletepod" == "Y" ] ; then #delete pods first
 delete_oms_pod
 echo "waiting for 5 min"
 countdown 00:05:00 
-echo "countdownend"
+list_oms_pods
+sleep 5s
+log_collector
 elif [ "$ifdeletepod" == "N" ] ; then
-echo "N select" 
+log_collector
 else 
 echo "please enter Y/N"
 fi
