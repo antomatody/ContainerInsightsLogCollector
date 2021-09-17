@@ -1,16 +1,16 @@
 # ContainerInsightsLogCollector
 
-##Introduction
+## Introduction
 This script is designed to collect related logs from OMS Agent pod enabled with Container Insights.
 https://docs.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-overview
 
-##Prerequistes
+## Prerequistes
 Bash environment with kubectl connected to target cluster.
 
-##Usage
+## Usage
 `wget https://raw.githubusercontent.com/antomatody/ContainerInsightsLogCollector/main/ContianerInsightsLogCollector.sh && bash ContianerInsightsLogCollector.sh`
 
-##Function
+## Function
 1. Let you choose if you want to delete current OMS agent pods first.(will be recreated)
 2. Collect:
 - omsagent deployment
