@@ -71,6 +71,10 @@ countdown()
   echo
 )
 
+echo "***********************************************"
+echo "Welcome to use Container Insgihts log collector"
+echo "***********************************************"
+
 #check kubectl installed
 command -v kubectl > /dev/null 2>&1 || { echo >&2 "kubectl is not installed, existing" ; exit 1 ;}
 
