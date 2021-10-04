@@ -17,11 +17,11 @@ Bash environment with kubectl connected to target cluster.
 - configmap 
 3. For omsagent-rs-xxxxx pod , collect:
 - describe pod
-- pod log
+- container log
 - agent log
 - cim log
 4. For 1 random omsagent-xxxxx pod, collect:
 - describe pod
-- pod log
+- container omsagent log
 - agent log
 - cim log
