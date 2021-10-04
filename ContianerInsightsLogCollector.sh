@@ -19,7 +19,7 @@ log_collector()
     
     #rs-pod collection
     mkdir $path/$RSOMSPOD
-    kubectl logs $RSOMSPOD -n kube-system > $path/$RSOMSPOD-podlog.log
+    kubectl logs $RSOMSPOD -n kube-system --timestamps > $path/$RSOMSPOD-containerlog.log
     kubectl describe pod $RSOMSPOD -n kube-system > $path/$RSOMSPOD-describe.log
 
     kubectl cp -n kube-system $RSOMSPOD:/var/opt/microsoft/linuxmonagent/log $path/$RSOMSPOD 1>/dev/null
@@ -31,7 +31,7 @@ log_collector()
         if [ $OMSPOD == $RSOMSPOD ] ; then continue
         else 
             mkdir $path/$OMSPOD
-            kubectl logs $OMSPOD -n kube-system > $path/$OMSPOD-podlog.log
+            kubectl logs $OMSPOD -c omsagent -n kube-system --timestamps > $path/$OMSPOD-containerlog.log
             kubectl describe pod $OMSPOD -n kube-system > $path/$OMSPOD-describe.log
 
             kubectl cp -n kube-system $OMSPOD:/var/opt/microsoft/linuxmonagent/log $path/$OMSPOD 1>/dev/null
@@ -40,11 +40,23 @@ log_collector()
         fi
     done
 
-    tar -zcvf $path.tar.gz $path/ 1>/dev/null
+    #tar -zcvf $path.tar.gz $path/ 1>/dev/null
     #rm -rf $path/
 
-    echo "collection complete at $path.tar.gz"
+    echo "collection complete at $path"
 }
+
+pack_logs()
+{
+    if [ $(command -v zip |wc -l) == "1" ]; then
+    zip -q -r $path.zip $path/ 1>/dev/null
+    echo "packed at $path.zip"
+    else
+    tar -zcvf $path.tar.gz $path/ 1>/dev/null
+    echo "packed at $path.tar.gz"
+    fi
+}
+
 
 delete_oms_pod()
 {
@@ -97,8 +109,10 @@ countdown 00:05:00
 list_oms_pods
 sleep 5s
 log_collector
+pack_logs
 elif [ "$ifdeletepod" == "N" ] ; then
 log_collector
+pack_logs
 else 
 echo "please enter Y/N"
 fi
