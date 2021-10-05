@@ -14,28 +14,40 @@ log_collector()
     echo "start log collecting"
     mkdir $path
     kubectl get deployment omsagent-rs -n kube-system -o yaml > $path/deployment.txt 2>&1
+    echo "<log collection> omsagent deployment "
     kubectl get configmaps container-azm-ms-agentconfig -o yaml -n kube-system > $path/configmap.txt 2>&1
+    echo "<log collection> application map "
     RSOMSPOD=$(kubectl get pods -n kube-system | grep omsagent-rs | awk '{print $1}' )
     
     #rs-pod collection
     mkdir $path/$RSOMSPOD
-    kubectl logs $RSOMSPOD -n kube-system --timestamps > $path/$RSOMSPOD-containerlog.log
-    kubectl describe pod $RSOMSPOD -n kube-system > $path/$RSOMSPOD-describe.log
+    kubectl logs $RSOMSPOD -n kube-system --timestamps > $path/$RSOMSPOD-containerlog.log 2>&1
+    echo "<log collection> $RSOMSPOD container log "
+    kubectl describe pod $RSOMSPOD -n kube-system > $path/$RSOMSPOD-describe.log 2>&1
+    echo "<log collection> described $RSOMSPOD"
 
     kubectl cp -n kube-system $RSOMSPOD:/var/opt/microsoft/linuxmonagent/log $path/$RSOMSPOD 1>/dev/null
+    echo "<log collection> $RSOMSPOD mdsd log "
     kubectl cp -n kube-system $RSOMSPOD:/var/opt/microsoft/docker-cimprov/log $path/$RSOMSPOD 1>/dev/null
-
+    echo "<log collection> $RSOMSPOD cim log "
 
     for OMSPOD in $(kubectl get pods -n kube-system | grep omsagent | awk '{print $1}' )
     do
         if [ $OMSPOD == $RSOMSPOD ] ; then continue
         else 
             mkdir $path/$OMSPOD
-            kubectl logs $OMSPOD -c omsagent -n kube-system --timestamps > $path/$OMSPOD-containerlog.log
-            kubectl describe pod $OMSPOD -n kube-system > $path/$OMSPOD-describe.log
+            kubectl logs $OMSPOD -c omsagent -n kube-system --timestamps > $path/$OMSPOD-containerlog.log 2>&1
+            echo "*********************************" >> $path/$OMSPOD-containerlog.log
+            kubectl logs $OMSPOD -c omsagent-prometheus -n kube-system --timestamps >> $path/$OMSPOD-containerlog.log 2>&1
+            echo "<log collection> $OMSPOD container log "
+
+            kubectl describe pod $OMSPOD -n kube-system > $path/$OMSPOD-describe.log 2>&1
+            echo "<log collection> described $OMSPOD"
 
             kubectl cp -n kube-system $OMSPOD:/var/opt/microsoft/linuxmonagent/log $path/$OMSPOD 1>/dev/null
+            echo "<log collection> $OMSPOD mdsd log "
             kubectl cp -n kube-system $OMSPOD:/var/opt/microsoft/docker-cimprov/log $path/$OMSPOD 1>/dev/null
+            echo "<log collection> $OMSPOD cim log "
             break
         fi
     done
